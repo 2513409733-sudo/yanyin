@@ -446,6 +446,12 @@ export const useStore = create((set, get) => ({
     }))
   },
   deletePeriodLog: (id) => set(s => ({ periodLogs: s.periodLogs.filter(l => l.id !== id) })),
+  addPeriodLog: (from, startDate, endDate) => set(s => ({
+    periodLogs: [...s.periodLogs, { id: Date.now(), from, startDate, endDate: endDate || null, notes: '' }],
+  })),
+  updatePeriodLog: (id, data) => set(s => ({
+    periodLogs: s.periodLogs.map(l => l.id === id ? { ...l, ...data } : l),
+  })),
 
   setAvatarUrl: (url) => set(s => ({ user: { ...s.user, avatarUrl: url, hasSetAvatar: true } })),
   bindPartner: (uid, name) => set(s => ({ isBound: true, partner: { ...s.partner, uid, name } })),
