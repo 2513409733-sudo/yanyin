@@ -18,7 +18,7 @@ const PIE_COLORS = [
 
 const QUICK_EMOJIS = ['📌','🎀','☕','🎸','🐾','🎨','✈️','🏋️','📚','💅','🍰','🌺']
 
-// ── Horizontal bar chart (replaces SVG pie) ───────────────
+// ── Bar chart (one bar per category) ─────────────────────
 function BarChart({ data, total }) {
   if (total === 0) {
     return (
@@ -27,30 +27,33 @@ function BarChart({ data, total }) {
       </View>
     )
   }
+  const sorted = [...data].sort((a, b) => b.value - a.value)
   return (
-    <View style={lc.barChart}>
-      {/* Stacked bar */}
-      <View style={lc.stackBar}>
-        {data.map((d, i) => (
-          <View key={i} style={{ flex: d.value / total, backgroundColor: d.color, height: '100%' }} />
-        ))}
-      </View>
-      {/* Legend */}
-      <View style={{ marginTop: 8, gap: 4 }}>
-        {data.map((d, i) => (
-          <View key={i} style={lc.legendRow}>
-            <View style={[lc.legendDot, { backgroundColor: d.color }]} />
-            <Text style={{ fontSize: 13 }}>{d.emoji}</Text>
-            <Text style={[lc.legendLabel, { fontFamily: 'Cubic11' }]} numberOfLines={1}>{d.label}</Text>
-            <Text style={[lc.legendValue, { fontFamily: 'Cubic11' }]}>
-              ¥{d.value >= 10000 ? `${(d.value / 10000).toFixed(1)}w` : d.value.toFixed(0)}
-            </Text>
-            <Text style={[lc.legendPct, { fontFamily: 'Cubic11' }]}>
-              {total > 0 ? ((d.value / total) * 100).toFixed(0) : 0}%
-            </Text>
+    <View style={{ gap: 8 }}>
+      {sorted.map((d, i) => {
+        const pct = total > 0 ? (d.value / total) * 100 : 0
+        return (
+          <View key={i} style={{ gap: 3 }}>
+            {/* Label row */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <Text style={{ fontSize: 12 }}>{d.emoji}</Text>
+              <Text style={[{ fontFamily: 'Cubic11', fontSize: 10, color: '#555', flex: 1 }]} numberOfLines={1}>
+                {d.label}
+              </Text>
+              <Text style={[{ fontFamily: 'Cubic11', fontSize: 10, color: '#888' }]}>
+                ¥{d.value >= 10000 ? `${(d.value / 10000).toFixed(1)}w` : d.value.toFixed(0)}
+              </Text>
+              <Text style={[{ fontFamily: 'Cubic11', fontSize: 10, fontWeight: '700', color: d.color, minWidth: 34, textAlign: 'right' }]}>
+                {pct.toFixed(0)}%
+              </Text>
+            </View>
+            {/* Bar track */}
+            <View style={lc.barTrack}>
+              <View style={[lc.barFill, { width: `${pct}%`, backgroundColor: d.color }]} />
+            </View>
           </View>
-        ))}
-      </View>
+        )
+      })}
     </View>
   )
 }
@@ -765,14 +768,9 @@ const lc = StyleSheet.create({
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 2, borderBottomColor: '#e8dfa8' },
   pieToggle: { paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: '#ddd' },
 
-  barChart: { width: '100%' },
   emptyChart: { alignItems: 'center', paddingVertical: 20 },
-  stackBar: { height: 20, flexDirection: 'row', borderWidth: 2, borderColor: '#3d3d3d', overflow: 'hidden', marginBottom: 4 },
-  legendRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
-  legendDot: { width: 10, height: 10, borderWidth: 1, borderColor: '#3d3d3d', flexShrink: 0 },
-  legendLabel: { flex: 1, fontSize: 10, color: '#555' },
-  legendValue: { fontSize: 10, color: '#888', flexShrink: 0 },
-  legendPct: { fontSize: 8, color: '#aaa', width: 28, textAlign: 'right', flexShrink: 0 },
+  barTrack: { height: 10, backgroundColor: '#f0ede0', borderWidth: 2, borderColor: '#3d3d3d', overflow: 'hidden' },
+  barFill: { height: '100%' },
 
   dateHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#e8dfa8' },
   entryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1 },
