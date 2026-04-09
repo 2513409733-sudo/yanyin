@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>盐音</title>
+
+    <!-- PWA meta -->
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="盐音" />
+    <meta name="theme-color" content="#fdf6e3" />
+
+    <style>
+      @font-face {
+        font-family: 'Cubic11';
+        src: url('/fonts/Cubic11.ttf') format('truetype');
+        font-display: swap;
+      }
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; background: #fdf6e3; overflow: hidden; }
+      #root {
+        height: 100%;
+        /* Mobile viewport height fix */
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/web/main.jsx"></script>
+  </body>
+</html>
