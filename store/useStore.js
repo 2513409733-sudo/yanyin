@@ -285,7 +285,7 @@ export const useStore = create((set, get) => ({
   // Returns { ok, error }.
   registerUser: async (uid, name) => {
     try {
-      const { registerUserRemote } = await import('./firebaseService')
+      const { registerUserRemote } = await import('./leancloudService')
       const result = await registerUserRemote(uid, name)
       if (!result.ok) return result
     } catch (e) {
@@ -307,13 +307,13 @@ export const useStore = create((set, get) => ({
   loginByUid: async (uid) => {
     let found = null
     try {
-      const { fetchUserByUid, fetchCoupleForUser } = await import('./firebaseService')
+      const { fetchUserByUid, fetchCoupleForUser } = await import('./leancloudService')
       found = await fetchUserByUid(uid)
       if (found) {
         // Restore partner binding if one exists
         const couple = await fetchCoupleForUser(uid)
         if (couple) {
-          const { fetchUserByUid: fu } = await import('./firebaseService')
+          const { fetchUserByUid: fu } = await import('./leancloudService')
           const partner = await fu(couple.partnerUid)
           set(s => ({
             isBound: true,
@@ -337,7 +337,7 @@ export const useStore = create((set, get) => ({
     const myUid = get().user.uid
     if (uid === myUid) return null
     try {
-      const { searchPartnerByUid } = await import('./firebaseService')
+      const { searchPartnerByUid } = await import('./leancloudService')
       return await searchPartnerByUid(uid, myUid)
     } catch {
       // Offline fallback: local only
@@ -347,7 +347,7 @@ export const useStore = create((set, get) => ({
 
   // Subscribe to live partner status updates (call once after binding).
   subscribePartnerStatus: (partnerUid) => {
-    import('./firebaseService').then(({ subscribePartnerStatus }) => {
+    import('./leancloudService').then(({ subscribePartnerStatus }) => {
       const unsub = subscribePartnerStatus(partnerUid, (data) => {
         set(s => ({
           partner: {
@@ -539,7 +539,7 @@ export const useStore = create((set, get) => ({
   bindPartner: async (uid, name) => {
     const myUid = get().user.uid
     try {
-      const { bindPartnerRemote } = await import('./firebaseService')
+      const { bindPartnerRemote } = await import('./leancloudService')
       await bindPartnerRemote(myUid, uid)
     } catch { /* offline — binding stored locally only */ }
     set(s => ({ isBound: true, partner: { ...s.partner, uid, name: name ?? uid } }))

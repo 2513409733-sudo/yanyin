@@ -55,13 +55,10 @@ export default defineConfig({
     global: 'window',
     __DEV__: JSON.stringify(process.env.NODE_ENV !== 'production'),
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
-    // Map Vite env vars → process.env.EXPO_PUBLIC_* so firebase.js works in both Expo and Vite
-    'process.env.EXPO_PUBLIC_FIREBASE_API_KEY':            JSON.stringify(process.env.VITE_FIREBASE_API_KEY            || ''),
-    'process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN':        JSON.stringify(process.env.VITE_FIREBASE_AUTH_DOMAIN        || ''),
-    'process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID':         JSON.stringify(process.env.VITE_FIREBASE_PROJECT_ID         || ''),
-    'process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET':     JSON.stringify(process.env.VITE_FIREBASE_STORAGE_BUCKET     || ''),
-    'process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID':JSON.stringify(process.env.VITE_FIREBASE_MESSAGING_SENDER_ID|| ''),
-    'process.env.EXPO_PUBLIC_FIREBASE_APP_ID':             JSON.stringify(process.env.VITE_FIREBASE_APP_ID             || ''),
+    // Map Vite env vars → process.env.EXPO_PUBLIC_* so leancloud.js works in both Expo and Vite
+    'process.env.EXPO_PUBLIC_LEANCLOUD_APP_ID':     JSON.stringify(process.env.VITE_LEANCLOUD_APP_ID     || ''),
+    'process.env.EXPO_PUBLIC_LEANCLOUD_APP_KEY':    JSON.stringify(process.env.VITE_LEANCLOUD_APP_KEY    || ''),
+    'process.env.EXPO_PUBLIC_LEANCLOUD_SERVER_URL': JSON.stringify(process.env.VITE_LEANCLOUD_SERVER_URL || ''),
   },
   build: {
     outDir: 'dist-pwa',
