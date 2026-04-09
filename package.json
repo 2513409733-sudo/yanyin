@@ -32,10 +32,10 @@
   },
   "private": true,
   "devDependencies": {
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^4.7.0",
     "react-router-dom": "^7.14.0",
     "sharp": "^0.34.5",
-    "vite": "^8.0.8",
+    "vite": "^7.3.2",
     "vite-plugin-pwa": "^1.2.0"
   }
 }
