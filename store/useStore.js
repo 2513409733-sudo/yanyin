@@ -281,38 +281,85 @@ export const useStore = create((set, get) => ({
   ],
 
   // Actions
-  // Register a new user with a unique UID. Returns { ok, error }.
-  registerUser: (uid, name) => {
-    const taken = get().registeredUsers.some(u => u.uid === uid)
-    if (taken) return { ok: false, error: 'uid_taken' }
-    const entry = { uid, name }
+  // Register a new user — writes to Firestore for cross-device uniqueness.
+  // Returns { ok, error }.
+  registerUser: async (uid, name) => {
+    try {
+      const { registerUserRemote } = await import('./firebaseService')
+      const result = await registerUserRemote(uid, name)
+      if (!result.ok) return result
+    } catch (e) {
+      // Offline fallback: check local only
+      if (get().registeredUsers.some(u => u.uid === uid))
+        return { ok: false, error: 'uid_taken' }
+    }
     set(s => ({
-      registeredUsers: [...s.registeredUsers, entry],
+      registeredUsers: [...s.registeredUsers, { uid, name }],
       isLoggedIn: true,
       isBound: false,
-      user: {
-        ...s.user,
-        uid,
-        name,
-        hasSetAvatar: false,
-        avatarUrl: null,
-      },
+      user: { ...s.user, uid, name, hasSetAvatar: false, avatarUrl: null },
     }))
     return { ok: true }
   },
 
-  // Login by UID. Returns true if found.
-  loginByUid: (uid) => {
-    const found = get().registeredUsers.find(u => u.uid === uid)
+  // Login by UID — fetches user from Firestore.
+  // Returns true if found.
+  loginByUid: async (uid) => {
+    let found = null
+    try {
+      const { fetchUserByUid, fetchCoupleForUser } = await import('./firebaseService')
+      found = await fetchUserByUid(uid)
+      if (found) {
+        // Restore partner binding if one exists
+        const couple = await fetchCoupleForUser(uid)
+        if (couple) {
+          const { fetchUserByUid: fu } = await import('./firebaseService')
+          const partner = await fu(couple.partnerUid)
+          set(s => ({
+            isBound: true,
+            partner: { ...s.partner, uid: couple.partnerUid, name: partner?.name ?? couple.partnerUid },
+          }))
+        } else {
+          set({ isBound: false })
+        }
+      }
+    } catch {
+      // Offline fallback: check local cache
+      found = get().registeredUsers.find(u => u.uid === uid)
+    }
     if (!found) return false
     set(s => ({ isLoggedIn: true, user: { ...s.user, uid: found.uid, name: found.name } }))
     return true
   },
 
-  // Search for another registered user by UID (excludes self).
-  searchUserByUid: (uid) => {
+  // Search for another user by UID — queries Firestore.
+  searchUserByUid: async (uid) => {
     const myUid = get().user.uid
-    return get().registeredUsers.find(u => u.uid === uid && u.uid !== myUid) || null
+    if (uid === myUid) return null
+    try {
+      const { searchPartnerByUid } = await import('./firebaseService')
+      return await searchPartnerByUid(uid, myUid)
+    } catch {
+      // Offline fallback: local only
+      return get().registeredUsers.find(u => u.uid === uid && u.uid !== myUid) || null
+    }
+  },
+
+  // Subscribe to live partner status updates (call once after binding).
+  subscribePartnerStatus: (partnerUid) => {
+    import('./firebaseService').then(({ subscribePartnerStatus }) => {
+      const unsub = subscribePartnerStatus(partnerUid, (data) => {
+        set(s => ({
+          partner: {
+            ...s.partner,
+            name: data.name ?? s.partner.name,
+            mood: data.mood ?? s.partner.mood,
+            moodSong: data.moodSong ?? s.partner.moodSong,
+          },
+        }))
+      })
+      set({ _partnerUnsub: unsub })
+    }).catch(() => {})
   },
 
   login: (name) => set({ isLoggedIn: true, user: { ...get().user, name } }),
@@ -489,10 +536,14 @@ export const useStore = create((set, get) => ({
   })),
 
   setAvatarUrl: (url) => set(s => ({ user: { ...s.user, avatarUrl: url, hasSetAvatar: true } })),
-  bindPartner: (uid) => {
-    const found = get().registeredUsers.find(u => u.uid === uid)
-    const name = found?.name ?? uid
-    set(s => ({ isBound: true, partner: { ...s.partner, uid, name } }))
+  bindPartner: async (uid, name) => {
+    const myUid = get().user.uid
+    try {
+      const { bindPartnerRemote } = await import('./firebaseService')
+      await bindPartnerRemote(myUid, uid)
+    } catch { /* offline — binding stored locally only */ }
+    set(s => ({ isBound: true, partner: { ...s.partner, uid, name: name ?? uid } }))
+    get().subscribePartnerStatus(uid)
   },
   unbindPartner: () => set({ isBound: false }),
   addSticker: (url) => set(s => ({ stickers: [...s.stickers, { id: Date.now(), url }] })),

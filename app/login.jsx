@@ -31,16 +31,19 @@ export default function Login() {
   const [name, setName] = useState('')
   const [uid, setUid] = useState('')
   const [loginUid, setLoginUid] = useState('')
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
   const { registerUser, loginByUid, theme } = useStore()
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     const trimUid = uid.trim().toUpperCase()
     const trimName = name.trim()
     if (!trimUid) return Alert.alert('提示', '请设置你的 UID')
     if (trimUid.length < 4) return Alert.alert('提示', 'UID 至少需要 4 位')
     if (!trimName) return Alert.alert('提示', '请填写昵称')
-    const result = registerUser(trimUid, trimName)
+    setLoading(true)
+    const result = await registerUser(trimUid, trimName)
+    setLoading(false)
     if (!result.ok) {
       Alert.alert('UID 已被使用', '该 UID 已有人注册，请换一个试试')
       return
@@ -48,12 +51,14 @@ export default function Login() {
     router.replace('/onboarding')
   }
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const trimUid = loginUid.trim().toUpperCase()
     if (!trimUid) return Alert.alert('提示', '请输入你的 UID')
-    const ok = loginByUid(trimUid)
+    setLoading(true)
+    const ok = await loginByUid(trimUid)
+    setLoading(false)
     if (!ok) {
-      Alert.alert('未找到该 UID', '该 UID 尚未在本设备注册，请先注册')
+      Alert.alert('未找到该 UID', '该 UID 尚未注册，请先注册')
       return
     }
     const { user, isBound } = useStore.getState()
@@ -144,8 +149,8 @@ export default function Login() {
               />
             </View>
 
-            <TouchableOpacity onPress={handleRegister} style={[s.primaryBtn, { backgroundColor: theme.primary }]}>
-              <Text style={[s.primaryBtnText, { fontFamily: 'Cubic11' }]}>▶ 注册并开始</Text>
+            <TouchableOpacity onPress={handleRegister} disabled={loading} style={[s.primaryBtn, { backgroundColor: theme.primary, opacity: loading ? 0.6 : 1 }]}>
+              <Text style={[s.primaryBtnText, { fontFamily: 'Cubic11' }]}>{loading ? '请稍候...' : '▶ 注册并开始'}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -164,8 +169,8 @@ export default function Login() {
               />
             </View>
 
-            <TouchableOpacity onPress={handleLogin} style={[s.primaryBtn, { backgroundColor: theme.primary }]}>
-              <Text style={[s.primaryBtnText, { fontFamily: 'Cubic11' }]}>▶ 登录</Text>
+            <TouchableOpacity onPress={handleLogin} disabled={loading} style={[s.primaryBtn, { backgroundColor: theme.primary, opacity: loading ? 0.6 : 1 }]}>
+              <Text style={[s.primaryBtnText, { fontFamily: 'Cubic11' }]}>{loading ? '请稍候...' : '▶ 登录'}</Text>
             </TouchableOpacity>
           </View>
         )}

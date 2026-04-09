@@ -9,19 +9,25 @@ export default function BindPartner() {
   const [query, setQuery] = useState('')
   const [found, setFound] = useState(null)   // { uid, name } | null
   const [searched, setSearched] = useState(false)
+  const [searching, setSearching] = useState(false)
+  const [binding, setBinding] = useState(false)
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     const q = query.trim().toUpperCase()
     if (!q) return Alert.alert('提示', '请输入对方的 UID')
     if (q === user.uid) return Alert.alert('提示', '不能绑定自己哦')
-    const result = searchUserByUid(q)
+    setSearching(true)
+    const result = await searchUserByUid(q)
+    setSearching(false)
     setFound(result)
     setSearched(true)
   }
 
-  const handleBind = () => {
+  const handleBind = async () => {
     if (!found) return
-    bindPartner(found.uid)
+    setBinding(true)
+    await bindPartner(found.uid, found.name)
+    setBinding(false)
     router.replace('/(tabs)')
   }
 
@@ -60,9 +66,10 @@ export default function BindPartner() {
             />
             <TouchableOpacity
               onPress={handleSearch}
-              style={[bp.searchBtn, { backgroundColor: theme.primary, borderColor: '#3d3d3d' }]}
+              disabled={searching}
+              style={[bp.searchBtn, { backgroundColor: theme.primary, borderColor: '#3d3d3d', opacity: searching ? 0.6 : 1 }]}
             >
-              <Text style={[{ fontFamily: 'Cubic11', fontSize: 12, color: '#fff', fontWeight: '700' }]}>搜索</Text>
+              <Text style={[{ fontFamily: 'Cubic11', fontSize: 12, color: '#fff', fontWeight: '700' }]}>{searching ? '...' : '搜索'}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -78,9 +85,10 @@ export default function BindPartner() {
               </View>
               <TouchableOpacity
                 onPress={handleBind}
-                style={[bp.bindBtn, { backgroundColor: theme.secondary, borderColor: '#3d3d3d' }]}
+                disabled={binding}
+                style={[bp.bindBtn, { backgroundColor: theme.secondary, borderColor: '#3d3d3d', opacity: binding ? 0.6 : 1 }]}
               >
-                <Text style={[{ fontFamily: 'Cubic11', fontSize: 12, color: '#fff', fontWeight: '700' }]}>绑定 ❤️</Text>
+                <Text style={[{ fontFamily: 'Cubic11', fontSize: 12, color: '#fff', fontWeight: '700' }]}>{binding ? '...' : '绑定 ❤️'}</Text>
               </TouchableOpacity>
             </View>
           ) : (
