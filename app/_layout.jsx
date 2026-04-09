@@ -33,6 +33,7 @@ function RootLayoutNav() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="login" />
         <Stack.Screen name="onboarding" />
+        <Stack.Screen name="bind-partner" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="goals" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="plans" options={{ animation: 'slide_from_right' }} />

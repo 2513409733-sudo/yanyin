@@ -1,43 +1,77 @@
 import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useStore } from '../store/useStore'
 
+// Generate a random 8-char UID: uppercase letters + digits, ambiguous chars removed
+function genUid() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let s = ''
+  for (let i = 0; i < 8; i++) s += chars[Math.floor(Math.random() * chars.length)]
+  return s
+}
+
 function PixelHeart({ size = 32, color = '#fff' }) {
-  // Pixel heart made from View blocks
-  const s = size / 16
-  const block = (x, y, w, h) => (
-    <View key={`${x}${y}`} style={{
-      position: 'absolute', left: x * s, top: y * s,
-      width: w * s, height: h * s, backgroundColor: color,
-    }} />
+  const u = size / 16
+  const b = (x, y, w, h) => (
+    <View key={`${x}${y}`} style={{ position: 'absolute', left: x*u, top: y*u, width: w*u, height: h*u, backgroundColor: color }} />
   )
   return (
     <View style={{ width: size, height: size }}>
-      {block(1,4,4,2)}{block(7,4,4,2)}
-      {block(0,6,6,4)}{block(6,6,4,4)}{block(10,6,6,4)}
-      {block(1,10,14,2)}{block(2,12,12,2)}
-      {block(4,14,8,1)}{block(6,15,4,1)}
+      {b(1,4,4,2)}{b(7,4,4,2)}
+      {b(0,6,6,4)}{b(6,6,4,4)}{b(10,6,6,4)}
+      {b(1,10,14,2)}{b(2,12,12,2)}
+      {b(4,14,8,1)}{b(6,15,4,1)}
     </View>
   )
 }
 
 export default function Login() {
-  const [tab, setTab] = useState('login')
+  const [tab, setTab] = useState('register')
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [uid, setUid] = useState('')
+  const [loginUid, setLoginUid] = useState('')
   const router = useRouter()
-  const login = useStore(s => s.login)
-  const theme = useStore(s => s.theme)
+  const { registerUser, loginByUid, theme } = useStore()
 
-  const handleSubmit = () => {
-    login(name || '小雪')
+  const handleRegister = () => {
+    const trimUid = uid.trim().toUpperCase()
+    const trimName = name.trim()
+    if (!trimUid) return Alert.alert('提示', '请设置你的 UID')
+    if (trimUid.length < 4) return Alert.alert('提示', 'UID 至少需要 4 位')
+    if (!trimName) return Alert.alert('提示', '请填写昵称')
+    const result = registerUser(trimUid, trimName)
+    if (!result.ok) {
+      Alert.alert('UID 已被使用', '该 UID 已有人注册，请换一个试试')
+      return
+    }
     router.replace('/onboarding')
   }
 
+  const handleLogin = () => {
+    const trimUid = loginUid.trim().toUpperCase()
+    if (!trimUid) return Alert.alert('提示', '请输入你的 UID')
+    const ok = loginByUid(trimUid)
+    if (!ok) {
+      Alert.alert('未找到该 UID', '该 UID 尚未在本设备注册，请先注册')
+      return
+    }
+    const { user, isBound } = useStore.getState()
+    if (!user.hasSetAvatar) {
+      router.replace('/onboarding')
+    } else if (!isBound) {
+      router.replace('/bind-partner')
+    } else {
+      router.replace('/(tabs)')
+    }
+  }
+
   return (
-    <ScrollView style={[s.page, { backgroundColor: theme.bg }]} contentContainerStyle={s.container}>
+    <ScrollView
+      style={[s.page, { backgroundColor: theme.bg }]}
+      contentContainerStyle={s.container}
+      keyboardShouldPersistTaps="handled"
+    >
       {/* Logo */}
       <View style={s.logoArea}>
         <View style={[s.logoBox, { backgroundColor: theme.primary }]}>
@@ -51,7 +85,7 @@ export default function Login() {
       <View style={s.card}>
         {/* Tabs */}
         <View style={s.tabRow}>
-          {[['login', '登 录'], ['register', '注 册']].map(([t, l], i) => (
+          {[['register', '注 册'], ['login', '登 录']].map(([t, l], i) => (
             <TouchableOpacity
               key={t}
               onPress={() => setTab(t)}
@@ -61,15 +95,43 @@ export default function Login() {
                 i === 0 && { borderRightWidth: 3 },
               ]}
             >
-              <Text style={[s.tabText, { fontFamily: 'Cubic11', color: tab === t ? theme.primary : '#888', fontWeight: tab === t ? '700' : '400' }]}>
+              <Text style={[s.tabText, {
+                fontFamily: 'Cubic11',
+                color: tab === t ? theme.primary : '#888',
+                fontWeight: tab === t ? '700' : '400',
+              }]}>
                 {l}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <View style={s.form}>
-          {tab === 'register' && (
+        {tab === 'register' ? (
+          <View style={s.form}>
+            {/* UID */}
+            <View style={s.field}>
+              <Text style={[s.label, { fontFamily: 'Cubic11' }]}>设置你的 UID</Text>
+              <Text style={[s.hint, { fontFamily: 'Cubic11' }]}>UID 是你的唯一标识，对象通过它找到你</Text>
+              <View style={s.uidRow}>
+                <TextInput
+                  style={[s.input, s.uidInput, { fontFamily: 'Cubic11' }]}
+                  placeholder="4–16 位字母或数字"
+                  value={uid}
+                  onChangeText={t => setUid(t.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                  autoCapitalize="characters"
+                  maxLength={16}
+                  placeholderTextColor="#bbb"
+                />
+                <TouchableOpacity
+                  onPress={() => setUid(genUid())}
+                  style={[s.genBtn, { borderColor: theme.primary }]}
+                >
+                  <Text style={[{ fontFamily: 'Cubic11', fontSize: 11, color: theme.primary }]}>随机生成</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Nickname */}
             <View style={s.field}>
               <Text style={[s.label, { fontFamily: 'Cubic11' }]}>昵称</Text>
               <TextInput
@@ -77,44 +139,40 @@ export default function Login() {
                 placeholder="给自己取个名字"
                 value={name}
                 onChangeText={setName}
+                maxLength={12}
                 placeholderTextColor="#bbb"
               />
             </View>
-          )}
-          <View style={s.field}>
-            <Text style={[s.label, { fontFamily: 'Cubic11' }]}>邮箱</Text>
-            <TextInput
-              style={[s.input, { fontFamily: 'Cubic11' }]}
-              placeholder="your@email.com"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholderTextColor="#bbb"
-            />
-          </View>
-          <View style={s.field}>
-            <Text style={[s.label, { fontFamily: 'Cubic11' }]}>密码</Text>
-            <TextInput
-              style={[s.input, { fontFamily: 'Cubic11' }]}
-              placeholder="••••••••"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              placeholderTextColor="#bbb"
-            />
-          </View>
 
-          <TouchableOpacity onPress={handleSubmit} style={[s.primaryBtn, { backgroundColor: theme.primary }]}>
-            <Text style={[s.primaryBtnText, { fontFamily: 'Cubic11' }]}>
-              {tab === 'login' ? '▶ 登录' : '▶ 注册并开始'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity onPress={handleRegister} style={[s.primaryBtn, { backgroundColor: theme.primary }]}>
+              <Text style={[s.primaryBtnText, { fontFamily: 'Cubic11' }]}>▶ 注册并开始</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={s.form}>
+            <View style={s.field}>
+              <Text style={[s.label, { fontFamily: 'Cubic11' }]}>你的 UID</Text>
+              <Text style={[s.hint, { fontFamily: 'Cubic11' }]}>输入注册时设置的 UID 即可登录</Text>
+              <TextInput
+                style={[s.input, { fontFamily: 'Cubic11' }]}
+                placeholder="输入你的 UID"
+                value={loginUid}
+                onChangeText={t => setLoginUid(t.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                autoCapitalize="characters"
+                maxLength={16}
+                placeholderTextColor="#bbb"
+              />
+            </View>
+
+            <TouchableOpacity onPress={handleLogin} style={[s.primaryBtn, { backgroundColor: theme.primary }]}>
+              <Text style={[s.primaryBtnText, { fontFamily: 'Cubic11' }]}>▶ 登录</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       <Text style={[s.terms, { fontFamily: 'Cubic11' }]}>
-        登录即表示同意《用户协议》和《隐私政策》
+        UID 仅保存在本设备，不会上传至任何服务器
       </Text>
     </ScrollView>
   )
@@ -147,11 +205,19 @@ const s = StyleSheet.create({
   form: { padding: 20, gap: 14 },
   field: { gap: 4 },
   label: { fontSize: 11, color: '#888' },
+  hint: { fontSize: 10, color: '#bbb', marginBottom: 2 },
   input: {
     borderWidth: 3, borderColor: '#3d3d3d',
     backgroundColor: '#fffef5',
     paddingHorizontal: 12, paddingVertical: 10,
     fontSize: 14, color: '#3d3d3d',
+  },
+  uidRow: { flexDirection: 'row', gap: 8, alignItems: 'stretch' },
+  uidInput: { flex: 1 },
+  genBtn: {
+    borderWidth: 2, paddingHorizontal: 10,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#fffef5',
   },
   primaryBtn: {
     borderWidth: 3, borderColor: '#3d3d3d',

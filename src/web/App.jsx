@@ -11,6 +11,7 @@ import ProfileScreen from '../../app/(tabs)/profile'
 // Sub-screens
 import LoginScreen from '../../app/login'
 import OnboardingScreen from '../../app/onboarding'
+import BindPartnerScreen from '../../app/bind-partner'
 import PeriodScreen from '../../app/period'
 import PeriodHistoryScreen from '../../app/period-history'
 import LedgerScreen from '../../app/ledger'
@@ -93,6 +94,7 @@ function TabsLayout() {
 export default function App() {
   const isLoggedIn = useStore(s => s.isLoggedIn)
   const user = useStore(s => s.user)
+  const isBound = useStore(s => s.isBound)
 
   return (
     <div style={{ height: '100%', overflow: 'hidden' }}>
@@ -100,6 +102,7 @@ export default function App() {
         {/* Auth */}
         <Route path="/login" element={<LoginScreen />} />
         <Route path="/onboarding" element={<OnboardingScreen />} />
+        <Route path="/bind-partner" element={<BindPartnerScreen />} />
 
         {/* Sub-screens */}
         <Route path="/period" element={<PeriodScreen />} />
@@ -114,7 +117,8 @@ export default function App() {
           path="/*"
           element={
             !isLoggedIn ? <Navigate to="/login" replace /> :
-            !user?.name ? <Navigate to="/onboarding" replace /> :
+            !user?.hasSetAvatar ? <Navigate to="/onboarding" replace /> :
+            !isBound ? <Navigate to="/bind-partner" replace /> :
             <TabsLayout />
           }
         />

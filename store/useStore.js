@@ -230,6 +230,7 @@ export const useStore = create((set, get) => ({
   resetTheme: () => set({ theme: { ...DEFAULT_THEME } }),
 
   isLoggedIn: false,
+  registeredUsers: [],   // { uid, name } — all users registered on this device
   user: {
     uid: 'IS87654321',
     name: '小雪',
@@ -280,6 +281,40 @@ export const useStore = create((set, get) => ({
   ],
 
   // Actions
+  // Register a new user with a unique UID. Returns { ok, error }.
+  registerUser: (uid, name) => {
+    const taken = get().registeredUsers.some(u => u.uid === uid)
+    if (taken) return { ok: false, error: 'uid_taken' }
+    const entry = { uid, name }
+    set(s => ({
+      registeredUsers: [...s.registeredUsers, entry],
+      isLoggedIn: true,
+      isBound: false,
+      user: {
+        ...s.user,
+        uid,
+        name,
+        hasSetAvatar: false,
+        avatarUrl: null,
+      },
+    }))
+    return { ok: true }
+  },
+
+  // Login by UID. Returns true if found.
+  loginByUid: (uid) => {
+    const found = get().registeredUsers.find(u => u.uid === uid)
+    if (!found) return false
+    set(s => ({ isLoggedIn: true, user: { ...s.user, uid: found.uid, name: found.name } }))
+    return true
+  },
+
+  // Search for another registered user by UID (excludes self).
+  searchUserByUid: (uid) => {
+    const myUid = get().user.uid
+    return get().registeredUsers.find(u => u.uid === uid && u.uid !== myUid) || null
+  },
+
   login: (name) => set({ isLoggedIn: true, user: { ...get().user, name } }),
   logout: () => set({ isLoggedIn: false }),
   setAvatar: (avatar) => set(s => ({ user: { ...s.user, avatar } })),
@@ -454,7 +489,11 @@ export const useStore = create((set, get) => ({
   })),
 
   setAvatarUrl: (url) => set(s => ({ user: { ...s.user, avatarUrl: url, hasSetAvatar: true } })),
-  bindPartner: (uid, name) => set(s => ({ isBound: true, partner: { ...s.partner, uid, name } })),
+  bindPartner: (uid) => {
+    const found = get().registeredUsers.find(u => u.uid === uid)
+    const name = found?.name ?? uid
+    set(s => ({ isBound: true, partner: { ...s.partner, uid, name } }))
+  },
   unbindPartner: () => set({ isBound: false }),
   addSticker: (url) => set(s => ({ stickers: [...s.stickers, { id: Date.now(), url }] })),
   markAllRead: () => set(s => ({ messages: s.messages.map(m => ({ ...m, read: true })) })),
