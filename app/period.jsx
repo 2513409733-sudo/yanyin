@@ -171,6 +171,7 @@ function HistoryList({ logs, color, onDelete, onEdit }) {
 
 // ── Period panel (one user) ───────────────────────────────
 function PeriodPanel({ title, color, logs, from, onDelete, addPeriodLog, updatePeriodLog, theme }) {
+  const router = useRouter()
   const now = new Date()
   const [calYear, setCalYear] = useState(now.getFullYear())
   const [calMonth, setCalMonth] = useState(now.getMonth() + 1)
@@ -346,7 +347,15 @@ function PeriodPanel({ title, color, logs, from, onDelete, addPeriodLog, updateP
 
         {/* History */}
         <View style={pd.historySec}>
-          <Text style={[pd.sectionTitle, { fontFamily: 'Cubic11' }]}>历史记录</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={[pd.sectionTitle, { fontFamily: 'Cubic11' }]}>历史记录</Text>
+            <TouchableOpacity
+              onPress={() => router.push(`/period-history?from=${from}`)}
+              style={pd.historyAllBtn}
+            >
+              <Text style={[{ fontFamily: 'Cubic11', fontSize: 9, color }]}>查看全部 ›</Text>
+            </TouchableOpacity>
+          </View>
           <HistoryList
             logs={logs}
             color={color}
@@ -572,6 +581,7 @@ const pd = StyleSheet.create({
   historyAction: { padding: 4 },
   emptyHistory: { alignItems: 'center', paddingVertical: 10 },
   expandBtn: { alignItems: 'center', paddingVertical: 6, borderWidth: 2, borderColor: '#e8dfa8', borderTopWidth: 0 },
+  historyAllBtn: { paddingVertical: 2, paddingHorizontal: 4 },
 
   // Gender modal
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },

@@ -39,6 +39,7 @@ function RootLayoutNav() {
         <Stack.Screen name="ledger" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="checkin" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="period" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="period-history" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </>
   )
