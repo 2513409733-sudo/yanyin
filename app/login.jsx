@@ -110,16 +110,6 @@ export default function Login() {
               {tab === 'login' ? '▶ 登录' : '▶ 注册并开始'}
             </Text>
           </TouchableOpacity>
-
-          <View style={s.divider}>
-            <View style={s.divLine} />
-            <Text style={[s.divText, { fontFamily: 'Cubic11' }]}>或</Text>
-            <View style={s.divLine} />
-          </View>
-
-          <TouchableOpacity onPress={handleSubmit} style={s.wechatBtn}>
-            <Text style={[s.wechatBtnText, { fontFamily: 'Cubic11' }]}>微信一键登录</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -171,16 +161,5 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   primaryBtnText: { fontSize: 14, color: '#fff', fontWeight: '700' },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  divLine: { flex: 1, height: 2, backgroundColor: '#e8dfa8' },
-  divText: { fontSize: 11, color: '#aaa' },
-  wechatBtn: {
-    backgroundColor: '#07C160',
-    borderWidth: 3, borderColor: '#3d3d3d',
-    paddingVertical: 14, alignItems: 'center',
-    shadowColor: '#3d3d3d', shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1, shadowRadius: 0, elevation: 5,
-  },
-  wechatBtnText: { fontSize: 14, color: '#fff', fontWeight: '700' },
   terms: { fontSize: 11, color: '#bbb', marginTop: 20, textAlign: 'center', paddingHorizontal: 32 },
 })
