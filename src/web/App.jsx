@@ -95,6 +95,7 @@ export default function App() {
   const isLoggedIn = useStore(s => s.isLoggedIn)
   const user = useStore(s => s.user)
   const isBound = useStore(s => s.isBound)
+  const skippedBind = useStore(s => s.skippedBind)
 
   return (
     <div style={{ height: '100%', overflow: 'hidden' }}>

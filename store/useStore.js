@@ -223,17 +223,38 @@ const mockLedgerEntries = [
   { id: 11, date: '2026-02-01', type: 'income',  amount: 9500,  rawAmount: 9500,  currency: 'CNY', categoryId: 'salary',    note: '二月工资',    from: 'B' },
 ]
 
+// ── Simple localStorage persistence for auth state ───────────
+const STORAGE_KEY = 'yanyin_auth'
+
+function loadAuth() {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+
+function saveAuth(data) {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    }
+  } catch {}
+}
+
+const _auth = loadAuth()
+
 // ── Store ──────────────────────────────────────────────────
 export const useStore = create((set, get) => ({
   theme: { ...DEFAULT_THEME },
   setTheme: (partial) => set(s => ({ theme: { ...s.theme, ...partial } })),
   resetTheme: () => set({ theme: { ...DEFAULT_THEME } }),
 
-  isLoggedIn: false,
-  registeredUsers: [],   // { uid, name } — all users registered on this device
-  user: {
-    uid: 'IS87654321',
-    name: '小雪',
+  isLoggedIn: _auth.isLoggedIn || false,
+  skippedBind: _auth.skippedBind || false,  // user chose to bind later
+  registeredUsers: _auth.registeredUsers || [],   // { uid, name } — persisted locally
+  user: _auth.user || {
+    uid: '',
+    name: '',
     gender: 'female',
     hasSetAvatar: false,
     avatar: { skin: 's2', hair: 'h1', hairColor: 'hc2', eyes: 'e1', outfit: 'o1', outfitColor: 'oc6', accessory: 'a0' },
@@ -241,9 +262,9 @@ export const useStore = create((set, get) => ({
     moodSong: { title: '晴天', artist: '周杰伦', songId: '186001', link: 'https://music.163.com/song?id=186001' },
     avatarUrl: null,
   },
-  partner: {
-    uid: 'IS12345678',
-    name: '小明',
+  partner: _auth.partner || {
+    uid: '',
+    name: 'TA',
     gender: 'female',
     avatar: { skin: 's2', hair: 'h1', hairColor: 'hc2', eyes: 'e1', outfit: 'o1', outfitColor: 'oc6', accessory: 'a0' },
     nickname: 'TA',
@@ -251,7 +272,7 @@ export const useStore = create((set, get) => ({
     relationLabel: '在一起',
     mood: { label: '开心', emoji: '😊', color: '#FDCB6E' },
     moodSong: { title: '告白气球', artist: '周杰伦', songId: '413812694', link: 'https://music.163.com/song?id=413812694' },
-    daysCount: 128,
+    daysCount: 0,
   },
 
   checkins: mockCheckins,
@@ -265,7 +286,7 @@ export const useStore = create((set, get) => ({
   ledgerCategories: mockLedgerCategories,
   exchangeRates: { USD: 7.24, EUR: 7.85, JPY: 0.048, GBP: 9.18, HKD: 0.93, KRW: 0.0052, TWD: 0.22, SGD: 5.38 },
   ratesUpdatedAt: null,
-  isBound: true,
+  isBound: _auth.isBound || false,
   periodLogs: mockPeriodLogs,
   stickers: [],
   myMood: null,
@@ -293,12 +314,17 @@ export const useStore = create((set, get) => ({
       if (get().registeredUsers.some(u => u.uid === uid))
         return { ok: false, error: 'uid_taken' }
     }
-    set(s => ({
-      registeredUsers: [...s.registeredUsers, { uid, name }],
-      isLoggedIn: true,
-      isBound: false,
-      user: { ...s.user, uid, name, hasSetAvatar: false, avatarUrl: null },
-    }))
+    set(s => {
+      const next = {
+        registeredUsers: [...s.registeredUsers, { uid, name }],
+        isLoggedIn: true,
+        isBound: false,
+        skippedBind: false,
+        user: { ...s.user, uid, name, hasSetAvatar: false, avatarUrl: null },
+      }
+      saveAuth({ registeredUsers: next.registeredUsers, isLoggedIn: true, isBound: false, skippedBind: false, user: next.user, partner: s.partner })
+      return next
+    })
     return { ok: true }
   },
 
@@ -328,7 +354,11 @@ export const useStore = create((set, get) => ({
       found = get().registeredUsers.find(u => u.uid === uid)
     }
     if (!found) return false
-    set(s => ({ isLoggedIn: true, user: { ...s.user, uid: found.uid, name: found.name } }))
+    set(s => {
+      const next = { isLoggedIn: true, user: { ...s.user, uid: found.uid, name: found.name } }
+      saveAuth({ ...loadAuth(), registeredUsers: s.registeredUsers, isLoggedIn: true, user: next.user, isBound: get().isBound, partner: s.partner })
+      return next
+    })
     return true
   },
 
@@ -362,10 +392,25 @@ export const useStore = create((set, get) => ({
     }).catch(() => {})
   },
 
+  skipBind: () => {
+    set({ skippedBind: true })
+    saveAuth({ ...loadAuth(), skippedBind: true })
+  },
   login: (name) => set({ isLoggedIn: true, user: { ...get().user, name } }),
-  logout: () => set({ isLoggedIn: false }),
-  setAvatar: (avatar) => set(s => ({ user: { ...s.user, avatar } })),
-  setHasSetAvatar: () => set(s => ({ user: { ...s.user, hasSetAvatar: true } })),
+  logout: () => {
+    saveAuth({})
+    set({ isLoggedIn: false, isBound: false, skippedBind: false })
+  },
+  setAvatar: (avatar) => set(s => {
+    const user = { ...s.user, avatar }
+    saveAuth({ ...loadAuth(), user })
+    return { user }
+  }),
+  setHasSetAvatar: () => set(s => {
+    const user = { ...s.user, hasSetAvatar: true }
+    saveAuth({ ...loadAuth(), user })
+    return { user }
+  }),
   setDaysCount: (n) => set(s => ({ partner: { ...s.partner, daysCount: n } })),
   setRelationLabel: (label) => set(s => ({ partner: { ...s.partner, relationLabel: label } })),
   setMoodSong: (song) => {
@@ -542,10 +587,17 @@ export const useStore = create((set, get) => ({
       const { bindPartnerRemote } = await import('./leancloudService')
       await bindPartnerRemote(myUid, uid)
     } catch { /* offline — binding stored locally only */ }
-    set(s => ({ isBound: true, partner: { ...s.partner, uid, name: name ?? uid } }))
+    set(s => {
+      const partner = { ...s.partner, uid, name: name ?? uid }
+      saveAuth({ ...loadAuth(), isBound: true, skippedBind: false, partner })
+      return { isBound: true, skippedBind: false, partner }
+    })
     get().subscribePartnerStatus(uid)
   },
-  unbindPartner: () => set({ isBound: false }),
+  unbindPartner: () => {
+    saveAuth({ ...loadAuth(), isBound: false, skippedBind: false })
+    set({ isBound: false, skippedBind: false })
+  },
   addSticker: (url) => set(s => ({ stickers: [...s.stickers, { id: Date.now(), url }] })),
   markAllRead: () => set(s => ({ messages: s.messages.map(m => ({ ...m, read: true })) })),
 

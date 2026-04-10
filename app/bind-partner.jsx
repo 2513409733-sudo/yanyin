@@ -5,7 +5,7 @@ import { useStore } from '../store/useStore'
 
 export default function BindPartner() {
   const router = useRouter()
-  const { user, searchUserByUid, bindPartner, theme } = useStore()
+  const { user, searchUserByUid, bindPartner, skipBind, theme } = useStore()
   const [query, setQuery] = useState('')
   const [found, setFound] = useState(null)   // { uid, name } | null
   const [searched, setSearched] = useState(false)
@@ -32,6 +32,7 @@ export default function BindPartner() {
   }
 
   const handleSkip = () => {
+    skipBind()
     router.replace('/(tabs)')
   }
 
