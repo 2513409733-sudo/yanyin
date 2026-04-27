@@ -308,12 +308,14 @@ export const useStore = create((set, get) => ({
     try {
       const { registerUserRemote } = await import('./leancloudService')
       const result = await registerUserRemote(uid, name)
-      if (!result.ok) return result
+      // Only block if backend explicitly says UID is taken; ignore no_backend
+      if (!result.ok && result.error !== 'no_backend') return result
     } catch (e) {
-      // Offline fallback: check local only
-      if (get().registeredUsers.some(u => u.uid === uid))
-        return { ok: false, error: 'uid_taken' }
+      // ignore — fall through to local
     }
+    // Local dedup check
+    if (get().registeredUsers.some(u => u.uid === uid))
+      return { ok: false, error: 'uid_taken' }
     set(s => {
       const next = {
         registeredUsers: [...s.registeredUsers, { uid, name }],
@@ -336,7 +338,6 @@ export const useStore = create((set, get) => ({
       const { fetchUserByUid, fetchCoupleForUser } = await import('./leancloudService')
       found = await fetchUserByUid(uid)
       if (found) {
-        // Restore partner binding if one exists
         const couple = await fetchCoupleForUser(uid)
         if (couple) {
           const { fetchUserByUid: fu } = await import('./leancloudService')
@@ -349,10 +350,9 @@ export const useStore = create((set, get) => ({
           set({ isBound: false })
         }
       }
-    } catch {
-      // Offline fallback: check local cache
-      found = get().registeredUsers.find(u => u.uid === uid)
-    }
+    } catch { /* ignore */ }
+    // Fallback to localStorage cache
+    if (!found) found = get().registeredUsers.find(u => u.uid === uid)
     if (!found) return false
     set(s => {
       const next = { isLoggedIn: true, user: { ...s.user, uid: found.uid, name: found.name } }
@@ -368,11 +368,11 @@ export const useStore = create((set, get) => ({
     if (uid === myUid) return null
     try {
       const { searchPartnerByUid } = await import('./leancloudService')
-      return await searchPartnerByUid(uid, myUid)
-    } catch {
-      // Offline fallback: local only
-      return get().registeredUsers.find(u => u.uid === uid && u.uid !== myUid) || null
-    }
+      const remote = await searchPartnerByUid(uid, myUid)
+      if (remote) return remote
+    } catch { /* ignore */ }
+    // Fallback to localStorage cache
+    return get().registeredUsers.find(u => u.uid === uid && u.uid !== myUid) || null
   },
 
   // Subscribe to live partner status updates (call once after binding).
