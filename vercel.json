@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run pwa:build",
+  "outputDirectory": "dist-pwa",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
