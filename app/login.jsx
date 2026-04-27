@@ -33,7 +33,7 @@ export default function Login() {
   const [loginUid, setLoginUid] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const { registerUser, loginByUid, theme } = useStore()
+  const { registerUser, loginByUid, loginAsDemo, theme } = useStore()
 
   const handleRegister = async () => {
     const trimUid = uid.trim().toUpperCase()
@@ -176,6 +176,14 @@ export default function Login() {
         )}
       </View>
 
+      {/* Demo entry */}
+      <TouchableOpacity
+        onPress={() => { loginAsDemo(); router.replace('/(tabs)') }}
+        style={s.demoBtn}
+      >
+        <Text style={[s.demoText, { fontFamily: 'Cubic11', color: theme.primary }]}>✨ 一键体验（自动匹配虚拟伴侣）</Text>
+      </TouchableOpacity>
+
       <Text style={[s.terms, { fontFamily: 'Cubic11' }]}>
         UID 仅保存在本设备，不会上传至任何服务器
       </Text>
@@ -232,5 +240,7 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   primaryBtnText: { fontSize: 14, color: '#fff', fontWeight: '700' },
-  terms: { fontSize: 11, color: '#bbb', marginTop: 20, textAlign: 'center', paddingHorizontal: 32 },
+  terms: { fontSize: 11, color: '#bbb', marginTop: 12, textAlign: 'center', paddingHorizontal: 32 },
+  demoBtn: { marginTop: 24, paddingVertical: 10, paddingHorizontal: 24, alignItems: 'center' },
+  demoText: { fontSize: 13, textDecorationLine: 'underline' },
 })

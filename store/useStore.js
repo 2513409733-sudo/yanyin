@@ -392,6 +392,23 @@ export const useStore = create((set, get) => ({
     }).catch(() => {})
   },
 
+  loginAsDemo: () => {
+    const demoUser = { uid: 'DEMO', name: '旅行者', hasSetAvatar: true, avatarUrl: null }
+    const demoPartner = {
+      uid: 'SAKURA', name: '小樱',
+      mood: MOODS[0],
+      moodSong: { title: '晴天', artist: '周杰伦' },
+      lastActive: new Date().toISOString(),
+    }
+    const state = {
+      isLoggedIn: true, isBound: true, skippedBind: false,
+      user: demoUser, partner: demoPartner,
+      registeredUsers: [{ uid: 'DEMO', name: '旅行者' }, { uid: 'SAKURA', name: '小樱' }],
+    }
+    set(state)
+    saveAuth(state)
+  },
+
   skipBind: () => {
     set({ skippedBind: true })
     saveAuth({ ...loadAuth(), skippedBind: true })
