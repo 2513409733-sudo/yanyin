@@ -79,10 +79,14 @@ function TabsLayout() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <Routes>
           {TABS.map(({ path, Screen }) => (
-            <Route key={path} path={path} element={<Screen />} />
+            <Route key={path} path={path} element={
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+                <Screen />
+              </div>
+            } />
           ))}
         </Routes>
       </div>

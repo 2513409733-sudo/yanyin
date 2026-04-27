@@ -393,10 +393,15 @@ export const useStore = create((set, get) => ({
   },
 
   loginAsDemo: () => {
-    const demoUser = { uid: 'DEMO', name: '旅行者', hasSetAvatar: true, avatarUrl: null }
+    const demoUser = {
+      ...get().user,
+      uid: 'DEMO', name: '旅行者', hasSetAvatar: true, avatarUrl: null,
+      mood: MOODS[2],  // 期待 🥰
+    }
     const demoPartner = {
+      ...get().partner,
       uid: 'SAKURA', name: '小樱',
-      mood: MOODS[0],
+      mood: MOODS[0],  // 开心 😊
       moodSong: { title: '晴天', artist: '周杰伦' },
       lastActive: new Date().toISOString(),
     }
